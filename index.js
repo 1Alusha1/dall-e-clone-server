@@ -12,11 +12,13 @@ app.use(
   cors({
     origin: "https://dall-e-clone-client.netlify.app",
     methods: "GET,POST,PUT,DELETE",
+    allowedHeaders: 'Content-Type, Authorization'
   })
 );
 app.use(express.json({ limit: "50mb" }));
 
 app.use("/api/v1/post", postRoutes);
+
 
 const startServer = async () => {
   try {
