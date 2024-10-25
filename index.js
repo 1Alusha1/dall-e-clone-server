@@ -4,6 +4,7 @@ import cors from "cors";
 import connectDB from "./mongodb/connect.js";
 
 import postRoutes from "./routes/postRoutes.js";
+import fileUpload from "express-fileupload";
 
 dotenv.config();
 
@@ -16,7 +17,11 @@ app.use(
   })
 );
 app.use(express.json({ limit: "50mb" }));
-
+app.use(
+  fileUpload({
+    limits: { fileSize: 500 * 1024 },
+  })
+);
 app.use("/api/v1/post", postRoutes);
 
 

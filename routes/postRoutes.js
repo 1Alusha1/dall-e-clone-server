@@ -1,11 +1,16 @@
 import express from "express";
 import * as dotenv from "dotenv";
-
 import Post from "../mongodb/models/post.js";
+import Image from "../mongodb/models/image.js";
 
+import path from "node:path";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config();
-const router = express.Router();
 
+const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
@@ -16,18 +21,45 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/save-post", (req, res) => {
-  const { dto } = req.body;
+function generateUUID() {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
+router.post("/save-post", async (req, res) => {
+  const { name, prompt } = req.body;
+  const { photo } = req.files;
   try {
-    const post = new Post({ ...dto });
+    const uploadPath = path.join(
+      __dirname,
+      "..",
+      "uploads",
+      generateUUID() + photo.name
+    );
 
+    await photo.mv(uploadPath, (err) => {
+      if (err) console.log(err);
+    });
+    const image = await new Image({ src: uploadPath }).save();
+
+    const post = new Post({ name, prompt, photo: image._id });
     post.save();
+
     res.status(200).json({ message: "Your post was saved" });
   } catch (err) {
     if (err) throw err;
     res.status(500).json({ message: "Your post wasn't saved" });
   }
+});
+
+router.get("/show-photo", async (req, res) => {
+  const { id } = req.query;
+  console.log(id)
+  const image = await Image.findOne({ _id: id });
+  res.send(image.src);
 });
 
 router.get("/search", async (req, res) => {
