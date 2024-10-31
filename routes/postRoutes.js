@@ -3,11 +3,6 @@ import * as dotenv from "dotenv";
 import Post from "../mongodb/models/post.js";
 import Image from "../mongodb/models/image.js";
 
-import path from "node:path";
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config();
 
 const router = express.Router();
@@ -32,23 +27,22 @@ function generateUUID() {
 router.post("/save-post", async (req, res) => {
   const { name, prompt } = req.body;
   const { photo } = req.files;
+
   try {
-    const uploadPath = path.join(
-      __dirname,
-      "..",
-      "uploads",
-      generateUUID() + photo.name
-    );
+    if (!photo || Object.keys(photo).length === 0) {
+      return res.status(400).send("No files were uploaded.");
+    }
 
-    await photo.mv(uploadPath, (err) => {
-      if (err) {
-        console.log('Error moving file:', err);
-        return res.status(500).json({ message: "File upload error" });
-      }
-    });
+    if (!name || !prompt) {
+      return res.status(400).send("You must be enter name and prompt");
+    }
 
-    const image = await new Image({ src: uploadPath }).save();
+    const base64 = photo.data.toString("base64");
 
+    const image = await new Image({
+      data: base64,
+      contentType: photo.mimetype,
+    }).save();
 
     const post = new Post({ name, prompt, photo: image._id });
     await post.save();
@@ -62,18 +56,18 @@ router.post("/save-post", async (req, res) => {
 router.get("/show-photo", async (req, res) => {
   const { id } = req.query;
 
-  const image = await Image.findOne({ _id: id });
+  try {
+    const image = await Image.findOne({ _id: id });
 
-  if (image && image.src) {
-    return res.sendFile(image.src, (err) => {
-      if (err) {
-        console.error('Error sending file:', err);
-        return res.status(500).send('Error sending image');
-      }
-    });
+    if (!image) {
+      return res.status(404).send("Image not found");
+    }
+
+    res.contentType(image.contentType);
+    res.send(Buffer.from(image.data, "base64"));
+  } catch (err) {
+    res.status(500).send(err.message);
   }
-
-  res.status(404).send('Image not found');
 });
 
 router.get("/search", async (req, res) => {

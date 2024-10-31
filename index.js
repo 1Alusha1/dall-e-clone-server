@@ -2,14 +2,12 @@ import express from "express";
 import * as dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./mongodb/connect.js";
-
 import postRoutes from "./routes/postRoutes.js";
 import fileUpload from "express-fileupload";
 
 dotenv.config();
 
 const app = express();
-
 app.use(
   cors({
     origin: "*",

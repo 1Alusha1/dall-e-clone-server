@@ -1,9 +1,10 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const Image = new mongoose.Schema({
-  src: { type: String, required: true },
+const imageSchema = new mongoose.Schema({
+  data: { type: String, required: true },  // Base64 строка
+  contentType: { type: String, required: true }  // MIME-тип файла (например, image/png)
 });
 
-const ImageSchema = mongoose.model("Image", Image);
+const Image = mongoose.model('Image', imageSchema);
 
-export default ImageSchema;
+export default Image;
